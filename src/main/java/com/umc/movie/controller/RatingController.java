@@ -1,15 +1,17 @@
 package com.umc.movie.controller;
 
+import com.umc.movie.dto.ApiResponse;
+import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.RatingPageResponse;
+import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.service.RatingService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,12 +22,37 @@ public class RatingController {
 
     // page, size를 생략하면 첫 페이지(0)를 10개씩 응답합니다.
     @GetMapping("/{memberId}/ratings")
-    public RatingPageResponse getMemberRatings(
+    public ApiResponse<RatingPageResponse> getMemberRatings(
             @PathVariable Long memberId,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
             @RequestParam(defaultValue = "10")
             @Min(value = 1, message = "size는 1~50 사이여야 합니다.")
             @Max(value = 50, message = "size는 1~50 사이여야 합니다.") int size) {
-        return ratingService.getRatingsByMember(memberId, page, size);
+        return ApiResponse.ok("평점 목록 조회에 성공했습니다.", ratingService.getRatingsByMember(memberId, page, size));
+    }
+
+    @PostMapping("/{memberId}/ratings")
+    public ResponseEntity<ApiResponse<Long>> create(
+            @PathVariable Long memberId,
+            @Valid @RequestBody CreateRatingRequest request) {
+        Long ratingId = ratingService.create(memberId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created("평점 등록에 성공했습니다.", ratingId));
+    }
+
+    @PatchMapping("/{memberId}/ratings/{ratingId}")
+    public ApiResponse<Void> update(
+            @PathVariable Long memberId,
+            @PathVariable Long ratingId,
+            @Valid @RequestBody UpdateRatingRequest request) {
+        ratingService.update(ratingId, memberId, request);
+        return ApiResponse.ok("평점 수정에 성공했습니다.", null);
+    }
+
+    // 204 No Content는 본문 없이 "삭제됐다"는 상태만 알려줍니다.
+    @DeleteMapping("/{memberId}/ratings/{ratingId}")
+    public ResponseEntity<Void> delete(@PathVariable Long memberId, @PathVariable Long ratingId) {
+        ratingService.delete(ratingId, memberId);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,11 +1,17 @@
 package com.umc.movie.controller;
 
+import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.EmailCheckResponse;
+import com.umc.movie.dto.MemberResponse;
 import com.umc.movie.dto.NicknameCheckResponse;
+import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.service.MemberService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,14 +23,21 @@ public class MemberController {
 
     // 형식이 틀리면 Service(DB 조회)까지 가지 않고 바로 400으로 응답합니다.
     @GetMapping("/nickname/{nickname}")
-    public NicknameCheckResponse checkNickname(
+    public ApiResponse<NicknameCheckResponse> checkNickname(
             @PathVariable @Size(min = 2, max = 12, message = "닉네임은 2~12자여야 합니다.") String nickname) {
-        return memberService.checkNickname(nickname);
+        return ApiResponse.ok("닉네임 중복 확인에 성공했습니다.", memberService.checkNickname(nickname));
     }
 
     @GetMapping("/email/{email}")
-    public EmailCheckResponse checkEmail(
+    public ApiResponse<EmailCheckResponse> checkEmail(
             @PathVariable @Email(message = "이메일 형식이 올바르지 않습니다.") String email) {
-        return memberService.checkEmail(email);
+        return ApiResponse.ok("이메일 중복 확인에 성공했습니다.", memberService.checkEmail(email));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<MemberResponse>> signUp(@Valid @RequestBody SignUpRequest request) {
+        MemberResponse response = memberService.signUp(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created("회원가입에 성공했습니다.", response));
     }
 }
