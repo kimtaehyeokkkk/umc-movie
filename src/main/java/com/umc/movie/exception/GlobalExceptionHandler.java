@@ -10,8 +10,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.sql.SQLException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // MySQL 에러 코드 1062 = ER_DUP_ENTRY (UNIQUE/PK 중복)
+    private static final int MYSQL_DUPLICATE_ENTRY = 1062;
 
     // @Valid @RequestBody DTO 검증에 실패했을 때 (400)
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -47,9 +52,15 @@ public class GlobalExceptionHandler {
 
     // Service의 사전 중복 체크를 통과했는데 DB UNIQUE 제약에서 막혔을 때 (409)
     // 동시에 들어온 요청처럼 사전 체크만으로는 막을 수 없는 경우의 마지막 안전망입니다.
+    // 길이 초과·NULL 같은 다른 무결성 오류는 중복이 아니므로 409가 아니라 400으로 응답합니다.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException e) {
-        ErrorCode errorCode = resolveConflict(e.getMostSpecificCause().getMessage());
+        Throwable cause = e.getMostSpecificCause();
+        if (!(cause instanceof SQLException sqlException) || sqlException.getErrorCode() != MYSQL_DUPLICATE_ENTRY) {
+            return toResponse(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage());
+        }
+
+        ErrorCode errorCode = resolveConflict(sqlException.getMessage());
         return toResponse(errorCode, errorCode.getMessage());
     }
 
