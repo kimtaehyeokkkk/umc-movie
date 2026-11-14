@@ -29,7 +29,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header == null || !header.startsWith(BEARER_PREFIX)) {
+        // 인증 방식 이름은 대소문자를 구분하지 않으므로(RFC 7235) "bearer "도 받습니다. 토큰 부분은 그대로 씁니다.
+        if (header == null || !header.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
             throw new ApiException(ErrorCode.TOKEN_MISSING);
         }
 
