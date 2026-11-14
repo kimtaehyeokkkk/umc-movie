@@ -1,11 +1,11 @@
 package com.umc.movie.controller;
 
+import com.umc.movie.annotation.LoginMember;
 import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
-import com.umc.movie.interceptor.AuthInterceptor;
 import com.umc.movie.service.RatingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -36,7 +36,7 @@ public class RatingController {
     // URL에서 /members/{memberId}가 사라졌습니다. 받지 않는 값은 조작당할 수도 없습니다.
     @PostMapping("/ratings")
     public ResponseEntity<ApiResponse<RatingResponse>> create(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @Valid @RequestBody CreateRatingRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("평점을 등록했습니다.", ratingService.create(memberId, request)));
@@ -44,7 +44,7 @@ public class RatingController {
 
     @PatchMapping("/ratings/{ratingId}")
     public ApiResponse<RatingResponse> update(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long ratingId,
             @Valid @RequestBody UpdateRatingRequest request) {
         return ApiResponse.ok("평점을 수정했습니다.", ratingService.update(memberId, ratingId, request));
@@ -53,7 +53,7 @@ public class RatingController {
     // 204는 본문을 보낼 수 없어 공통 응답 형식을 지킬 수 없으므로, 200 + result null로 응답합니다.
     @DeleteMapping("/ratings/{ratingId}")
     public ApiResponse<Void> delete(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long ratingId) {
         ratingService.delete(memberId, ratingId);
         return ApiResponse.ok("평점을 삭제했습니다.", null);
