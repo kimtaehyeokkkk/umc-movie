@@ -2,9 +2,12 @@ package com.umc.movie.controller;
 
 import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.EmailCheckResponse;
+import com.umc.movie.dto.MemberInfoResponse;
 import com.umc.movie.dto.MemberResponse;
+import com.umc.movie.dto.MemberUpdateRequest;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.dto.SignUpRequest;
+import com.umc.movie.interceptor.AuthInterceptor;
 import com.umc.movie.service.MemberService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -39,5 +42,18 @@ public class MemberController {
         MemberResponse response = memberService.signUp(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created("회원가입에 성공했습니다.", response));
+    }
+
+    // URL 어디에도 누구의 정보인지 적혀 있지 않습니다. 인터셉터가 토큰에서 꺼내 담아둔 memberId를 씁니다.
+    @GetMapping("/me")
+    public ApiResponse<MemberInfoResponse> getMyInfo(@RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId) {
+        return ApiResponse.ok("회원 정보를 조회했습니다.", memberService.getMyInfo(memberId));
+    }
+
+    @PatchMapping("/me")
+    public ApiResponse<MemberInfoResponse> updateMyInfo(
+            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @Valid @RequestBody MemberUpdateRequest request) {
+        return ApiResponse.ok("회원 정보를 수정했습니다.", memberService.updateMyInfo(memberId, request));
     }
 }

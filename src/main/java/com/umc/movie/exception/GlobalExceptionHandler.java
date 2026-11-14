@@ -44,9 +44,9 @@ public class GlobalExceptionHandler {
         return toResponse(ErrorCode.INVALID_JSON, ErrorCode.INVALID_JSON.getMessage());
     }
 
-    // Service에서 던진 업무 규칙 위반 (404, 403, 409)
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
+    // Service·인터셉터에서 던진 ApiException (401, 403, 404, 409)
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException e) {
         return toResponse(e.getErrorCode(), e.getErrorCode().getMessage());
     }
 
