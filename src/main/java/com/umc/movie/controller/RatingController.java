@@ -1,8 +1,10 @@
 package com.umc.movie.controller;
 
+import com.umc.movie.annotation.LoginMember;
 import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.RatingPageResponse;
+import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.service.RatingService;
 import jakarta.validation.Valid;
@@ -13,15 +15,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+// 평점 API가 /members 아래와 /ratings로 나뉘어서 클래스 레벨 @RequestMapping을 두지 않습니다.
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/members")
 public class RatingController {
 
     private final RatingService ratingService;
 
-    // page, size를 생략하면 첫 페이지(0)를 10개씩 응답합니다.
-    @GetMapping("/{memberId}/ratings")
+    // 특정 회원의 평점 목록은 누구나 볼 수 있는 공개 API라 토큰을 받지 않습니다.
+    @GetMapping("/members/{memberId}/ratings")
     public ApiResponse<RatingPageResponse> getMemberRatings(
             @PathVariable Long memberId,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
@@ -31,28 +33,29 @@ public class RatingController {
         return ApiResponse.ok("평점 목록 조회에 성공했습니다.", ratingService.getRatingsByMember(memberId, page, size));
     }
 
-    @PostMapping("/{memberId}/ratings")
-    public ResponseEntity<ApiResponse<Long>> create(
-            @PathVariable Long memberId,
+    // URL에서 /members/{memberId}가 사라졌습니다. 받지 않는 값은 조작당할 수도 없습니다.
+    @PostMapping("/ratings")
+    public ResponseEntity<ApiResponse<RatingResponse>> create(
+            @LoginMember Long memberId,
             @Valid @RequestBody CreateRatingRequest request) {
-        Long ratingId = ratingService.create(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created("평점 등록에 성공했습니다.", ratingId));
+                .body(ApiResponse.created("평점을 등록했습니다.", ratingService.create(memberId, request)));
     }
 
-    @PatchMapping("/{memberId}/ratings/{ratingId}")
-    public ApiResponse<Void> update(
-            @PathVariable Long memberId,
+    @PatchMapping("/ratings/{ratingId}")
+    public ApiResponse<RatingResponse> update(
+            @LoginMember Long memberId,
             @PathVariable Long ratingId,
             @Valid @RequestBody UpdateRatingRequest request) {
-        ratingService.update(ratingId, memberId, request);
-        return ApiResponse.ok("평점 수정에 성공했습니다.", null);
+        return ApiResponse.ok("평점을 수정했습니다.", ratingService.update(memberId, ratingId, request));
     }
 
-    // 204 No Content는 본문 없이 "삭제됐다"는 상태만 알려줍니다.
-    @DeleteMapping("/{memberId}/ratings/{ratingId}")
-    public ResponseEntity<Void> delete(@PathVariable Long memberId, @PathVariable Long ratingId) {
-        ratingService.delete(ratingId, memberId);
-        return ResponseEntity.noContent().build();
+    // 204는 본문을 보낼 수 없어 공통 응답 형식을 지킬 수 없으므로, 200 + result null로 응답합니다.
+    @DeleteMapping("/ratings/{ratingId}")
+    public ApiResponse<Void> delete(
+            @LoginMember Long memberId,
+            @PathVariable Long ratingId) {
+        ratingService.delete(memberId, ratingId);
+        return ApiResponse.ok("평점을 삭제했습니다.", null);
     }
 }
