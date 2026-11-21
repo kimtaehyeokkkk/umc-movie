@@ -85,6 +85,9 @@ public class GlobalExceptionHandler {
         if (key.endsWith("uk_rating_member_movie")) {
             return ErrorCode.RATING_DUPLICATED;
         }
+        if (key.endsWith("uk_favorite_member_movie")) {
+            return ErrorCode.FAVORITE_DUPLICATED;
+        }
         return ErrorCode.DATA_CONFLICT;
     }
 
