@@ -7,6 +7,8 @@ import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.service.RatingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // 평점 API가 /members 아래와 /ratings로 나뉘어서 클래스 레벨 @RequestMapping을 두지 않습니다.
+@Tag(name = "Rating", description = "평점 목록(공개), 등록·수정·삭제(토큰 필요)")
 @RestController
 @RequiredArgsConstructor
 public class RatingController {
@@ -23,6 +26,7 @@ public class RatingController {
     private final RatingService ratingService;
 
     // 특정 회원의 평점 목록은 누구나 볼 수 있는 공개 API라 토큰을 받지 않습니다.
+    @SecurityRequirements
     @GetMapping("/members/{memberId}/ratings")
     public ApiResponse<RatingPageResponse> getMemberRatings(
             @PathVariable Long memberId,
